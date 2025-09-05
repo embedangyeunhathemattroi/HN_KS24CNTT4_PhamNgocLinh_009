@@ -8,7 +8,7 @@ interface Word {
   vietnamese: string;
 }
 
-export default function VocabularyApp() {
+export default function HN_KS24CNTT4_PhamNgocLinh_009z() {
   const [list, setList] = useState<Word[]>([]);
   const [english, setEnglish] = useState("");
   const [vietnamese, setVietnamese] = useState("");
@@ -16,23 +16,15 @@ export default function VocabularyApp() {
   const [showDelete, setShowDelete] = useState(false);
   const [deleteWord, setDeleteWord] = useState<Word | null>(null);
 
-  // dữ liệu mẫu ban đầu
-  const sampleData: Word[] = [
-    { id: "1", english: "apple", vietnamese: "quả táo" },
-    { id: "2", english: "dog", vietnamese: "con chó" },
-    { id: "3", english: "book", vietnamese: "quyển sách" },
-  ];
-
+  // lấy dữ liệu từ localStorage để hiển thị ra màn hình
   useEffect(() => {
     const saved = localStorage.getItem("words");
     if (saved) {
       setList(JSON.parse(saved));
-    } else {
-      localStorage.setItem("words", JSON.stringify(sampleData));
-      setList(sampleData);
     }
   }, []);
 
+  // mỗi khi thay đổi list thì lưu lại vào localStorage
   useEffect(() => {
     localStorage.setItem("words", JSON.stringify(list));
   }, [list]);
@@ -114,7 +106,7 @@ export default function VocabularyApp() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-center mb-4"> Quản Lý Từ Vựng</h1>
+      <h1 className="text-2xl font-bold text-center mb-4">Quản Lý Từ Vựng</h1>
       <div className="flex gap-2 mb-4">
         <Input
           placeholder="Từ tiếng Anh"
