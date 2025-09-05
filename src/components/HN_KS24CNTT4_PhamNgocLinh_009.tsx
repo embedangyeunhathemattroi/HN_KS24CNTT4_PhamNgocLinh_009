@@ -1,132 +1,163 @@
-import { Button, Input, Modal, Pagination } from "antd";
-import { Pencil, Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { Table, Button, Input, Modal, Pagination, message } from "antd";
+import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
-interface Customer {
+interface Vocab {
   id: string;
- VietnameseVocabulary: string;
-EnglishVocabulary: string;
+  english: string;
+  vietnamese: string;
 }
 
-export default function HN_KS24CNTT4_PhamNgocLinh_009() {
-  const [ vietnameseVocabulary, setVietnameseVocabulary] = useState("");
-  const [englishVocabulary, setEnglishVocabulary] = useState("");
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const pageSize = 5;
+export default function VocabularyManager() {
+  const [vocabs, setVocabs] = useState<Vocab[]>([]);
+  const [english, setEnglish] = useState("");
+  const [vietnamese, setVietnamese] = useState("");
+  const [editing, setEditing] = useState<Vocab | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState<Vocab | null>(null);
 
-  // Load dữ liệu từ localStorage hoặc tạo dữ liệu mẫu
   useEffect(() => {
-    const saved = localStorage.getItem("customers");
-    if (saved) {
-      setCustomers(JSON.parse(saved));
-    } else {
-      const sample: Customer[] = [
-        { id: "1",VietnameseVocabulary: "Apple", email: "táo" },
-        { id: "2",VietnameseVocabulary: "Book", email: "sách" },
-        { id: "3",VietnameseVocabulary: "Computer", email: "máy tính" },
-      ];
-      setCustomers(sample);
-      localStorage.setItem("customers", JSON.stringify(sample));
-    }
+    const saved = localStorage.getItem("vocabs");
+    if (saved) setVocabs(JSON.parse(saved));
   }, []);
 
-  const saveCustomers = (newList: Customer[]) => {
-    setCustomers(newList);
-    localStorage.setItem("customers", JSON.stringify(newList));
-  };
+  useEffect(() => {
+    localStorage.setItem("vocabs", JSON.stringify(vocabs));
+  }, [vocabs]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!englishVocabulary.trim() || !vietnameseVocabulary.trim()) return;
+  const handleAdd = () => {
+    if (!english.trim() || !vietnamese.trim()) {
+      message.error("Không được để trống");
+      return;
+    }
+    if (
+      vocabs.some(
+        (v) =>
+          v.english.toLowerCase() === english.trim().toLowerCase() &&
+          (!editing || v.id !== editing.id)
+      )
+    ) {
+      message.error("Từ tiếng Anh đã tồn tại");
+      return;
+    }
 
-    if (editingId) {
-      const updated = customers.map((c) =>
-        c.id === editingId ? { ...c,VietnameseVocabulary, email } : c
+    if (editing) {
+      setVocabs((prev) =>
+        prev.map((v) =>
+          v.id === editing.id
+            ? { ...v, english: english.trim(), vietnamese: vietnamese.trim() }
+            : v
+        )
       );
-      saveCustomers(updated);
-      setEditingId(null);
+      setEditing(null);
+      message.success("Cập nhật thành công");
     } else {
-      const newCustomer: Customer = {
-        id: Date.now().toString(),
-       VietnameseVocabulary,
-      EnglishVocabulary,
-      };
-      saveCustomers([...customers, newCustomer]);
+      setVocabs((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          english: english.trim(),
+          vietnamese: vietnamese.trim(),
+        },
+      ]);
+      message.success("Thêm thành công");
     }
-
-    setVietnameseVocabulary(""); setEnglishVocabulary("");
+    setEnglish("");
+    setVietnamese("");
   };
 
-  const handleEdit = (c: Customer) => {
-    setVietnameseVocabulary(c.vietnameseVocabulary); setEnglishVocabulary(c.englishVocabulary); 
-    setEditingId(c.id);
+  const handleEdit = (record: Vocab) => {
+    setEditing(record);
+    setEnglish(record.english);
+    setVietnamese(record.vietnamese);
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm("Bạn có chắc muốn xóa từ  này?")) {
-      const updated = customers.filter((c) => c.id !== id);
-      saveCustomers(updated);
-      if (editingId === id) setEditingId(null);
-      const totalPage = Math.ceil(updated.length / pageSize);
-      setCurrentPage(prev => (prev > totalPage ? (totalPage > 0 ? totalPage : 1) : prev));
+  const confirmDelete = () => {
+    if (deleting) {
+      setVocabs((prev) => prev.filter((v) => v.id !== deleting.id));
+      message.success("Xóa thành công");
     }
+    setDeleting(null);
+    setIsModalOpen(false);
   };
 
-
-  const startIndex = (currentPage - 1) * pageSize;
-  const currentCustomers = filtered.slice(startIndex, startIndex + pageSize);
+  const columns = [
+    {
+      title: "Từ tiếng Anh",
+      dataIndex: "english",
+    },
+    {
+      title: "Nghĩa tiếng Việt",
+      dataIndex: "vietnamese",
+    },
+    {
+      title: "Hành động",
+      render: (_: any, record: Vocab) => (
+        <div className="flex gap-2">
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+          >
+            Sửa
+          </Button>
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              setDeleting(record);
+              setIsModalOpen(true);
+            }}
+          >
+            Xóa
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="p-6 max-w-3xl mx-auto border rounded-lg shadow">
-      <h2 className="text-xl font-bold mb-4">Quản Lý Từ Vựng</h2>
+    <div className="p-6 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold text-center mb-4">
+        📘 Quản Lý Từ Vựng
+      </h1>
+      <div className="flex gap-2 mb-4">
+        <Input
+          placeholder="Từ tiếng Anh"
+          value={english}
+          onChange={(e) => setEnglish(e.target.value)}
+        />
+        <Input
+          placeholder="Nghĩa tiếng Việt"
+          value={vietnamese}
+          onChange={(e) => setVietnamese(e.target.value)}
+        />
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+          {editing ? "Lưu" : "Thêm"}
+        </Button>
+      </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-5 gap-2 mb-4">
-        <Input value={vietnameseVocabulary} onChange={(e) => setVietnameseVocabulary(e.target.value)} placeholder="Từ Tiếng Việt" />
-        <Input value={englishVocabulary} onChange={(e) => sêtnglishVocabulary(e.target.value)} placeholder="Nghĩa Tiếng Anh " />
-        <Button type="primary" htmlType="submit">{editingId ? "Cập nhật" : "Thêm"}</Button>
-      </form>
-
-      <Input
-        placeholder="Tìm kiếm theo tên..."
-        value={search}
-        onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-        className="mb-2"
+      <Table
+        rowKey="id"
+        columns={columns}
+        dataSource={vocabs}
+        pagination={false}
       />
 
-      <table className="w-full border text-sm">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border px-2">Từ Tiếng Việt</th>
-            <th className="border px-2">Nghĩa Tiếng Anh</th>
-            <th className="border px-2">Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentCustomers.map((c) => (
-            <tr key={c.id}>
-              <td className="border px-2">{c.name}</td>
-              <td className="border px-2">{c.email}</td>
-              <td className="border px-2 flex gap-2 justify-center">
-                <Pencil className="text-orange-500 cursor-pointer" onClick={() => handleEdit(c)} />
-                <Trash2 className="text-red-500 cursor-pointer" onClick={() => handleDelete(c.id)} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="flex justify-center mt-4">
+        <Pagination current={1} total={50} pageSize={10} />
+      </div>
 
-      {filtered.length > pageSize && (
-        <Pagination
-          className="mt-4"
-          current={currentPage}
-          pageSize={pageSize}
-          total={filtered.length}
-          onChange={(p) => setCurrentPage(p)}
-        />
-      )}
+      <Modal
+        title="Xác nhận xóa"
+        open={isModalOpen}
+        onOk={confirmDelete}
+        onCancel={() => setIsModalOpen(false)}
+        okText="Xóa"
+        cancelText="Hủy"
+      >
+        Bạn có chắc chắn muốn xóa từ này?
+      </Modal>
     </div>
   );
 }
